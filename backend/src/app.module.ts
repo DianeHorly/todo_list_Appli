@@ -4,6 +4,8 @@ import { SequelizeModule } from '@nestjs/sequelize';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UsersModule } from './users/users.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -36,6 +38,10 @@ import { AppService } from './app.service';
         retryDelay: 3000,
       }),
     }),
+
+    UsersModule,
+
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
