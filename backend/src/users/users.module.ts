@@ -4,7 +4,7 @@ import { User } from './models/user.model';
 
 @Module({
    imports: [
-    // Enregistre le modèle User dans ce module afin que
+    // Enregistrement du modèle User dans ce module afin que
     // Sequelize puisse l'utiliser pour accéder à la table users.
     SequelizeModule.forFeature([User]),
    ],

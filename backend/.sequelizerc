@@ -1,0 +1,9 @@
+const path = require('path');
+
+module.exports = {
+  // Je définis mes propres dossiers afin de regrouper
+  // toute la configuration de la base dans database.
+  config: path.resolve('database', 'config', 'config.cjs'),
+  'migrations-path': path.resolve('database', 'migrations'),
+  'seeders-path': path.resolve('database', 'seeders'),
+};
