@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+// Importation des fonctions et composants nécessaires depuis Vue et d'autres fichiers.
+import { computed, onMounted, ref } from "vue";
 
-import TaskCreateForm from '~/components/tasks/TaskCreateForm.vue';
-import TaskFilters from '~/components/tasks/TaskFilters.vue';
-import TaskHeader from '~/components/tasks/TaskHeader.vue';
-import TaskList from '~/components/tasks/TaskList.vue';
+import TaskCreateForm from "~/components/tasks/TaskCreateForm.vue";
+import TaskFilters from "~/components/tasks/TaskFilters.vue";
+import TaskHeader from "~/components/tasks/TaskHeader.vue";
+import TaskList from "~/components/tasks/TaskList.vue";
+
+// Définition des métadonnées de la page, incluant le middleware d'authentification.
+definePageMeta({
+  middleware: "auth",
+});
 
 // Definition de l'interface Task pour typer les tâches.
 interface Task {
@@ -17,7 +23,8 @@ interface Task {
 }
 
 // Definition du type TaskFilter pour les filtres de tâches.
-type TaskFilter = 'all' | 'todo' | 'completed';
+type TaskFilter = "all" | "todo" | "completed";
+type TaskSort = "newest" | "oldest";
 
 // Definition de l'interface ApiError pour gérer les erreurs d'API.
 interface ApiError {
@@ -31,13 +38,15 @@ interface ApiError {
 
 // Je récupère la configuration de l'application et le cookie d'authentification.
 const config = useRuntimeConfig();
-const accessToken = useCookie<string | null>('access_token');
+const accessToken = useCookie<string | null>("access_token");
+const userFirstName = useCookie<string | null>("user_first_name");
 
 // Définition des variables pour gérer l'état de l'application.
 const tasks = ref<Task[]>([]);
-const newTaskTitle = ref('');
-const searchTerm = ref('');
-const selectedFilter = ref<TaskFilter>('all');
+const newTaskTitle = ref("");
+const searchTerm = ref("");
+const selectedFilter = ref<TaskFilter>("all");
+const selectedSort = ref<TaskSort>("newest");
 
 const isLoading = ref(true);
 const isCreating = ref(false);
@@ -47,38 +56,36 @@ const isSavingTitle = ref(false);
 const updatingTaskId = ref<number | null>(null);
 const deletingTaskId = ref<number | null>(null);
 const editingTaskId = ref<number | null>(null);
-const editedTaskTitle = ref('');
+const editedTaskTitle = ref("");
 
-const errorMessage = ref('');
-const successMessage = ref('');
+const errorMessage = ref("");
+const successMessage = ref("");
 
-// Je filtre localement les tâches récupérées selon le texte recherché.
+// Je filtre et trie les tâches affichées.
 const displayedTasks = computed(() => {
   const search = searchTerm.value.trim().toLowerCase();
 
-  if (!search) {
-    return tasks.value;
-  }
+  const filteredTasks = search
+    ? tasks.value.filter((task) => task.title.toLowerCase().includes(search))
+    : [...tasks.value];
 
-  return tasks.value.filter((task) =>
-    task.title.toLowerCase().includes(search),
-  );
+  return filteredTasks.sort((firstTask, secondTask) => {
+    const firstDate = new Date(firstTask.createdAt).getTime();
+    const secondDate = new Date(secondTask.createdAt).getTime();
+
+    return selectedSort.value === "newest"
+      ? secondDate - firstDate
+      : firstDate - secondDate;
+  });
 });
 
-if (!accessToken.value) {
-  await navigateTo('/');
-}
-
 // Je définis une fonction pour extraire un message d'erreur depuis la réponse de l'API.
-function getApiErrorMessage(
-  error: unknown,
-  defaultMessage: string,
-): string {
+function getApiErrorMessage(error: unknown, defaultMessage: string): string {
   const apiError = error as ApiError;
   const message = apiError.data?.message;
 
   if (Array.isArray(message)) {
-    return message.join(' ');
+    return message.join(" ");
   }
 
   return message || defaultMessage;
@@ -86,11 +93,11 @@ function getApiErrorMessage(
 
 // determine si une tâche correspond au filtre sélectionné.
 function taskMatchesSelectedFilter(task: Task): boolean {
-  if (selectedFilter.value === 'todo') {
+  if (selectedFilter.value === "todo") {
     return !task.completed;
   }
 
-  if (selectedFilter.value === 'completed') {
+  if (selectedFilter.value === "completed") {
     return task.completed;
   }
 
@@ -102,13 +109,11 @@ async function handleUnauthorized(error: unknown): Promise<boolean> {
   const apiError = error as ApiError;
 
   const statusCode =
-    apiError.statusCode ||
-    apiError.status ||
-    apiError.data?.statusCode;
+    apiError.statusCode || apiError.status || apiError.data?.statusCode;
 
   if (statusCode === 401) {
     accessToken.value = null;
-    await navigateTo('/');
+    await navigateTo("/");
     return true;
   }
 
@@ -117,7 +122,7 @@ async function handleUnauthorized(error: unknown): Promise<boolean> {
 
 // Je récupère les tâches correspondant au filtre sélectionné.
 async function fetchTasks() {
-  errorMessage.value = '';
+  errorMessage.value = "";
   isLoading.value = true;
 
   try {
@@ -136,7 +141,7 @@ async function fetchTasks() {
 
     errorMessage.value = getApiErrorMessage(
       error,
-      'Impossible de récupérer les tâches.',
+      "Impossible de récupérer les tâches.",
     );
   } finally {
     isLoading.value = false;
@@ -146,13 +151,13 @@ async function fetchTasks() {
 // Je crée une nouvelle tâche et l’ajoute à la liste si elle correspond
 // au filtre actuellement sélectionné.
 async function handleCreateTask() {
-  errorMessage.value = '';
-  successMessage.value = '';
+  errorMessage.value = "";
+  successMessage.value = "";
 
   const title = newTaskTitle.value.trim();
 
   if (!title) {
-    errorMessage.value = 'Veuillez saisir le titre de la tâche.';
+    errorMessage.value = "Veuillez saisir le titre de la tâche.";
     return;
   }
 
@@ -162,7 +167,7 @@ async function handleCreateTask() {
     const createdTask = await $fetch<Task>(
       `${config.public.apiBaseUrl}/tasks`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken.value}`,
         },
@@ -176,8 +181,8 @@ async function handleCreateTask() {
       tasks.value.unshift(createdTask);
     }
 
-    newTaskTitle.value = '';
-    successMessage.value = 'La tâche a été créée avec succès.';
+    newTaskTitle.value = "";
+    successMessage.value = "La tâche a été créée avec succès.";
   } catch (error) {
     if (await handleUnauthorized(error)) {
       return;
@@ -185,7 +190,7 @@ async function handleCreateTask() {
 
     errorMessage.value = getApiErrorMessage(
       error,
-      'Impossible de créer la tâche.',
+      "Impossible de créer la tâche.",
     );
   } finally {
     isCreating.value = false;
@@ -195,15 +200,15 @@ async function handleCreateTask() {
 // Je change le statut puis je conserve la tâche seulement si elle
 // correspond encore au filtre sélectionné.
 async function handleToggleTask(task: Task) {
-  errorMessage.value = '';
-  successMessage.value = '';
+  errorMessage.value = "";
+  successMessage.value = "";
   updatingTaskId.value = task.id;
 
   try {
     const updatedTask = await $fetch<Task>(
       `${config.public.apiBaseUrl}/tasks/${task.id}`,
       {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${accessToken.value}`,
         },
@@ -234,7 +239,7 @@ async function handleToggleTask(task: Task) {
 
     errorMessage.value = getApiErrorMessage(
       error,
-      'Impossible de modifier le statut de la tâche.',
+      "Impossible de modifier le statut de la tâche.",
     );
   } finally {
     updatingTaskId.value = null;
@@ -242,8 +247,8 @@ async function handleToggleTask(task: Task) {
 }
 
 function startEditingTask(task: Task) {
-  errorMessage.value = '';
-  successMessage.value = '';
+  errorMessage.value = "";
+  successMessage.value = "";
 
   editingTaskId.value = task.id;
   editedTaskTitle.value = task.title;
@@ -251,18 +256,18 @@ function startEditingTask(task: Task) {
 
 function cancelEditingTask() {
   editingTaskId.value = null;
-  editedTaskTitle.value = '';
+  editedTaskTitle.value = "";
 }
 
 // Je sauvegarde le nouveau titre puis je mets à jour la tâche affichée.
 async function handleSaveTaskTitle(task: Task) {
-  errorMessage.value = '';
-  successMessage.value = '';
+  errorMessage.value = "";
+  successMessage.value = "";
 
   const title = editedTaskTitle.value.trim();
 
   if (!title) {
-    errorMessage.value = 'Le titre de la tâche ne peut pas être vide.';
+    errorMessage.value = "Le titre de la tâche ne peut pas être vide.";
     return;
   }
 
@@ -277,7 +282,7 @@ async function handleSaveTaskTitle(task: Task) {
     const updatedTask = await $fetch<Task>(
       `${config.public.apiBaseUrl}/tasks/${task.id}`,
       {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${accessToken.value}`,
         },
@@ -295,7 +300,7 @@ async function handleSaveTaskTitle(task: Task) {
       tasks.value[taskIndex] = updatedTask;
     }
 
-    successMessage.value = 'Le titre de la tâche a été modifié.';
+    successMessage.value = "Le titre de la tâche a été modifié.";
     cancelEditingTask();
   } catch (error) {
     if (await handleUnauthorized(error)) {
@@ -304,7 +309,7 @@ async function handleSaveTaskTitle(task: Task) {
 
     errorMessage.value = getApiErrorMessage(
       error,
-      'Impossible de modifier le titre de la tâche.',
+      "Impossible de modifier le titre de la tâche.",
     );
   } finally {
     isSavingTitle.value = false;
@@ -320,13 +325,13 @@ async function handleDeleteTask(task: Task) {
     return;
   }
 
-  errorMessage.value = '';
-  successMessage.value = '';
+  errorMessage.value = "";
+  successMessage.value = "";
   deletingTaskId.value = task.id;
 
   try {
     await $fetch(`${config.public.apiBaseUrl}/tasks/${task.id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken.value}`,
       },
@@ -336,7 +341,7 @@ async function handleDeleteTask(task: Task) {
       (currentTask) => currentTask.id !== task.id,
     );
 
-    successMessage.value = 'La tâche a été supprimée avec succès.';
+    successMessage.value = "La tâche a été supprimée avec succès.";
   } catch (error) {
     if (await handleUnauthorized(error)) {
       return;
@@ -344,7 +349,7 @@ async function handleDeleteTask(task: Task) {
 
     errorMessage.value = getApiErrorMessage(
       error,
-      'Impossible de supprimer la tâche.',
+      "Impossible de supprimer la tâche.",
     );
   } finally {
     deletingTaskId.value = null;
@@ -353,13 +358,14 @@ async function handleDeleteTask(task: Task) {
 
 async function handleFilterChange(filter: TaskFilter) {
   selectedFilter.value = filter;
-  searchTerm.value = '';
+  searchTerm.value = "";
   await fetchTasks();
 }
 
 async function handleLogout() {
   accessToken.value = null;
-  await navigateTo('/');
+  userFirstName.value = null;
+  await navigateTo("/");
 }
 
 onMounted(fetchTasks);
@@ -368,7 +374,10 @@ onMounted(fetchTasks);
 <template>
   <main class="min-h-dvh bg-slate-100 px-3 py-4 sm:px-6 sm:py-8">
     <section class="mx-auto w-full max-w-6xl space-y-6">
-      <TaskHeader @logout="handleLogout" />
+      <TaskHeader
+        :first-name="userFirstName || 'Utilisateur'"
+        @logout="handleLogout"
+      />
 
       <div
         v-if="errorMessage"
@@ -393,6 +402,7 @@ onMounted(fetchTasks);
       <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-7">
         <TaskFilters
           v-model:search-term="searchTerm"
+          v-model:selected-sort="selectedSort"
           :selected-filter="selectedFilter"
           @change-filter="handleFilterChange"
         />

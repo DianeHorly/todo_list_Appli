@@ -1,6 +1,6 @@
 // Composant pour afficher une tâche individuelle.
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
 interface Task {
   id: number;
@@ -21,10 +21,10 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'update:editedTitle': [value: string];
-  'start-edit': [task: Task];
-  'cancel-edit': [];
-  'save-title': [task: Task];
+  "update:editedTitle": [value: string];
+  "start-edit": [task: Task];
+  "cancel-edit": [];
+  "save-title": [task: Task];
   toggle: [task: Task];
   delete: [task: Task];
 }>();
@@ -33,13 +33,13 @@ const emit = defineEmits<{
 // qui reste géré par la page tasks.vue.
 const title = computed({
   get: () => props.editedTitle,
-  set: (value: string) => emit('update:editedTitle', value),
+  set: (value: string) => emit("update:editedTitle", value),
 });
 
 function formatDate(date: string) {
-  return new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
   }).format(new Date(date));
 }
 </script>
@@ -69,7 +69,7 @@ function formatDate(date: string) {
           maxlength="255"
           required
           class="w-full rounded-xl border border-blue-400 px-4 py-3 outline-none focus:ring-4 focus:ring-blue-100"
-        >
+        />
 
         <div class="flex flex-wrap gap-2">
           <button
@@ -77,7 +77,7 @@ function formatDate(date: string) {
             :disabled="isSavingTitle"
             class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
           >
-            {{ isSavingTitle ? 'Enregistrement...' : 'Enregistrer' }}
+            {{ isSavingTitle ? "Enregistrement..." : "Enregistrer" }}
           </button>
 
           <button
@@ -96,9 +96,7 @@ function formatDate(date: string) {
         <h2
           class="break-words font-semibold"
           :class="
-            task.completed
-              ? 'text-slate-400 line-through'
-              : 'text-slate-900'
+            task.completed ? 'text-slate-400 line-through' : 'text-slate-900'
           "
         >
           {{ task.title }}
@@ -120,7 +118,7 @@ function formatDate(date: string) {
             : 'bg-amber-100 text-amber-700'
         "
       >
-        {{ task.completed ? 'Terminée' : 'À faire' }}
+        {{ task.completed ? "Terminée" : "À faire" }}
       </span>
 
       <button
@@ -131,10 +129,10 @@ function formatDate(date: string) {
       >
         {{
           isUpdating
-            ? 'Mise à jour...'
+            ? "Mise à jour..."
             : task.completed
-              ? 'Remettre à faire'
-              : 'Marquer comme terminée'
+              ? "Remettre à faire"
+              : "Marquer comme terminée"
         }}
       </button>
 
@@ -153,7 +151,7 @@ function formatDate(date: string) {
         class="rounded-xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
         @click="emit('delete', task)"
       >
-        {{ isDeleting ? 'Suppression...' : 'Supprimer' }}
+        {{ isDeleting ? "Suppression..." : "Supprimer" }}
       </button>
     </div>
   </article>

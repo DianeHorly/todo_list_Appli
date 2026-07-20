@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+definePageMeta({
+  middleware: "guest",
+});
+
+// Définition des types pour l'authentification.
 type AuthMode = "login" | "register";
 
+// Définition des interfaces pour les réponses de l'API et les erreurs.
 interface AuthResponse {
   accessToken: string;
   user: {
@@ -25,6 +31,11 @@ const accessToken = useCookie<string | null>("access_token", {
   sameSite: "strict",
 });
 
+// Je conserve le prénom afin de personnaliser la page des tâches.
+const userFirstName = useCookie<string | null>("user_first_name", {
+  sameSite: "strict",
+});
+
 const authMode = ref<AuthMode>("login");
 const isLoading = ref(false);
 const errorMessage = ref("");
@@ -44,6 +55,10 @@ const registerForm = ref({
   passwordConfirmation: "",
 });
 
+// Je redirige l'utilisateur vers la page des tâches s'il est déjà connecté.
+if (accessToken.value) {
+  navigateTo("/tasks");
+}
 function changeAuthMode(mode: AuthMode) {
   authMode.value = mode;
   errorMessage.value = "";
@@ -61,6 +76,7 @@ function getApiErrorMessage(error: unknown, defaultMessage: string): string {
   return message || defaultMessage;
 }
 
+// Gestion de la connexion et de l'inscription
 async function handleLogin() {
   errorMessage.value = "";
   successMessage.value = "";
@@ -81,8 +97,9 @@ async function handleLogin() {
     // Je conserve le token afin d'accéder aux routes protégées.
     accessToken.value = response.accessToken;
 
+    userFirstName.value = response.user.firstName;
     // Je redirige l'utilisateur vers la page des tâches après une connexion réussie.
-    await navigateTo('/tasks');
+    await navigateTo("/tasks");
 
     successMessage.value = `Bienvenue ${response.user.firstName}, vous êtes connecté(e).`;
   } catch (error) {
@@ -95,6 +112,7 @@ async function handleLogin() {
   }
 }
 
+// Gestion de l'inscription
 async function handleRegister() {
   errorMessage.value = "";
   successMessage.value = "";
@@ -131,9 +149,9 @@ async function handleRegister() {
 
     // Je conserve le token afin que le nouveau compte soit connecté.
     accessToken.value = response.accessToken;
-
+    userFirstName.value = response.user.firstName;
     // Je redirige l'utilisateur vers la page des tâches après une inscription réussie.
-    await navigateTo('/tasks');
+    await navigateTo("/tasks");
 
     successMessage.value = `Bienvenue ${response.user.firstName}, votre compte a été créé avec succès.`;
   } catch (error) {
@@ -187,7 +205,7 @@ async function handleRegister() {
             <p class="text-sm font-semibold text-blue-600">Ma Todo List</p>
 
             <h2 class="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
-              {{ authMode === "login" ? "Bon retour !" : "Créer un compte" }}
+              {{ authMode === "login" ? "Connexion" : "Créer un compte" }}
             </h2>
 
             <p class="mt-2 text-sm text-slate-600 sm:text-base">

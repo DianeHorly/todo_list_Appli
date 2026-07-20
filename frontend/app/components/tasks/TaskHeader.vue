@@ -1,6 +1,9 @@
 // Composant pour afficher l'en-tête de la page des tâches.
 
 <script setup lang="ts">
+defineProps<{
+  firstName: string;
+}>();
 
 const emit = defineEmits<{
   logout: [];
@@ -12,9 +15,14 @@ const emit = defineEmits<{
     class="flex flex-col gap-5 rounded-2xl bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-7"
   >
     <div>
-      <p class="text-sm font-semibold text-blue-600">
-        Ma Todo List
-      </p>
+      <!-- Message personnalisé -->
+      <div
+        class="mb-4 w-fit rounded-xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700"
+      >
+        Bienvenue, <strong>{{ firstName }}</strong> Heureux de vous retrouver !
+      </div>
+
+      <p class="text-sm font-semibold text-blue-600">Ma Todo List</p>
 
       <h1 class="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
         Mes tâches

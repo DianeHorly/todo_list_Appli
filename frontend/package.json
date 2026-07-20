@@ -7,7 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -17,6 +19,11 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1"
+    "@nuxt/test-utils": "^4.0.3",
+    "@types/node": "^26.1.1",
+    "@vue/test-utils": "^2.4.11",
+    "happy-dom": "^20.11.0",
+    "playwright-core": "^1.61.1",
+    "vitest": "^4.1.10"
   }
 }
