@@ -3,6 +3,8 @@ import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 
 import { Task } from './models/task.model';
+import { TasksService } from './tasks.service';
+import { TasksController } from './tasks.controller';
 
 @Module({
   imports: [
@@ -13,5 +15,9 @@ import { Task } from './models/task.model';
 
   // J'exporte SequelizeModule pour permettre aux futurs services d'utiliser ce modèle.
   exports: [SequelizeModule],
+
+  providers: [TasksService],
+
+  controllers: [TasksController],
 })
-export class TasksModule {}
+export class TasksModule { }

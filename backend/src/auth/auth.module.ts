@@ -45,4 +45,4 @@ type JwtExpiration = '1h';
   // plus tard dans les autres parties de l'application.
   exports: [JwtModule, AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }
